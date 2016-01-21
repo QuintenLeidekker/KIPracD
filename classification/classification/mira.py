@@ -60,9 +60,41 @@ class MiraClassifier:
         datum is a counter from features to values for those features
         representing a vector of values.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        
+        for iteration in range(self.max_iterations):            
+            print "Starting iteration ", iteration, "..."     
+            for i in range(len(trainingData)):
+                score = util.Counter()
+                for l in self.legalLabels:
+                    score[l] = self.weights[l] * trainingData[i]
+                calcLabel = score.argMax()
+                trueLabel = trainingLabels[i]
+                if calcLabel != trueLabel:
+                    newTrainingData = self.calculateBestCdata(trainingData, trainingLabels, validationData, validationLabels, Cgrid, i, calcLabel, trueLabel)
+                    self.weights[calcLabel] -= newTrainingData
+                    self.weights[trueLabel] += newTrainingData
 
+                        
+    def calculateBestCdata(self, trainingData, trainingLabels, validationData, validationLabels, Cgrid, i, calcLabel, trueLabel):
+    
+        oldWeights = self.weights
+        accuracy = util.Counter()
+        f = trainingData[i]
+        for c in Cgrid:
+            
+            tau = min(c, ((self.weights[calcLabel] - self.weights[trueLabel])*f + 1)/(2*f.totalCount()*f.totalCount()))
+            self.weights[calcLabel] -= trainingData[i]*tau
+            self.weights[trueLabel] += trainingData[i]*tau
+            
+            classifiedValData = classify(validationData)
+            teller = 0;
+            for i in classifiedValData:
+                if classifiedValData[i] == validationLabels:
+                    teller += 1
+            accuracy[c] = teller
+            self.weights = oldWeights
+        return min(max(accuracy), ((self.weights[calcLabel] - self.weights[trueLabel])*f + 1)/(2*f.totalCount()*f.totalCount())*trainingData[i])
+        
     def classify(self, data ):
         """
         Classifies each datum as the label that most closely matches the prototype vector

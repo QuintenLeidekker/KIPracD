@@ -49,5 +49,5 @@ class PerceptronClassifierPacman(PerceptronClassifier):
         for iteration in range(self.max_iterations):
             print "Starting iteration ", iteration, "..."
             for i in range(len(trainingData)):
-                "*** YOUR CODE HERE ***"
+                # your code here
                 util.raiseNotDefined()

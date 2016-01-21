@@ -42,8 +42,10 @@ def basicFeatureExtractorDigit(datum):
     features = util.Counter()
     for x in range(DIGIT_DATUM_WIDTH):
         for y in range(DIGIT_DATUM_HEIGHT):
+            
             if datum.getPixel(x, y) > 0:
                 features[(x,y)] = 1
+                
             else:
                 features[(x,y)] = 0
     return features
@@ -72,14 +74,63 @@ def enhancedFeatureExtractorDigit(datum):
     for this datum (datum is of type samples.Datum).
 
     ## DESCRIBE YOUR ENHANCED FEATURES HERE...
-
+    For each pixel, we check wether or not the pixel is "surrounded" by other pixels that have values of 1 or 2.
     ##
     """
-    features =  basicFeatureExtractorDigit(datum)
+    features =  basicFeatureExtractorDigit(datum) 
+    
+    for x in range(DIGIT_DATUM_WIDTH):
+        for y in range(DIGIT_DATUM_HEIGHT):
+            links = True
+            rechts = True
+            onder = True
+            boven = True
+            
+            features[(x,y,'l')] = 0
+            
+            for xl in range(0, x):
+                if datum.getPixel(xl, y) > 0:
+                    links = False
+            if (links == False):
+                for xr in range (x + 1, DIGIT_DATUM_WIDTH):
+                    if datum.getPixel(xr, y) > 0:
+                        rechts = False
+                if (rechts == False):
+                    for yb in range (0, y):
+                        if datum.getPixel(x, yb) > 0:
+                            boven = False
+                    if (boven == False):
+                        for yo in range (y+1, DIGIT_DATUM_HEIGHT):
+                            if datum.getPixel(x, yo) > 0:
+                                onder = False
+                                features[(x,y,'l')] = 1
+            
+    counterBoven = 0
+    counterOnder = 0
+    for x in range(DIGIT_DATUM_WIDTH):
+        for y in range(DIGIT_DATUM_HEIGHT):
+            if y < DIGIT_DATUM_HEIGHT/2 and datum.getPixel(x,y) > 0:
+                counterBoven += 1
+            if y >= DIGIT_DATUM_HEIGHT/2 and datum.getPixel(x,y) > 0:
+                counterOnder += 1
+    features['bovenonder'] = 0
+    if counterBoven >= counterOnder:
+        features['bovenonder'] = 1
 
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-
+        
+        
+    counterLinks = 0
+    counterRechts = 0
+    for x in range(DIGIT_DATUM_WIDTH):
+        for y in range(DIGIT_DATUM_HEIGHT):
+            if x < DIGIT_DATUM_WIDTH/2 and datum.getPixel(x,y) > 0:
+                counterLinks += 1
+            if x >= DIGIT_DATUM_WIDTH/2 and datum.getPixel(x,y) > 0:
+                counterRechts += 1
+    features['linksrechts'] = 0
+    if counterLinks >= counterRechts:
+        features['linksrechts'] = 1
+    
     return features
 
 
@@ -133,6 +184,7 @@ def contestFeatureExtractorDigit(datum):
     Specify features to use for the minicontest
     """
     features =  basicFeatureExtractorDigit(datum)
+    
     return features
 
 def enhancedFeatureExtractorFace(datum):
@@ -176,7 +228,6 @@ def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
     #         print "Image: "
     #         print rawTestData[i]
     #         break
-
 
 ## =====================
 ## You don't have to modify any code below.

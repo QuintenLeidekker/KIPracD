@@ -60,20 +60,67 @@ class MiraClassifier:
         datum is a counter from features to values for those features
         representing a vector of values.
         """
-        
-        for iteration in range(self.max_iterations):            
-            print "Starting iteration ", iteration, "..."     
-            for i in range(len(trainingData)):
-                score = util.Counter()
-                for l in self.legalLabels:
-                    score[l] = self.weights[l] * trainingData[i]
-                calcLabel = score.argMax()
-                trueLabel = trainingLabels[i]
-                if calcLabel != trueLabel:
-                    newTrainingData = self.calculateBestCdata(trainingData, trainingLabels, validationData, validationLabels, Cgrid, i, calcLabel, trueLabel)
-                    self.weights[calcLabel] -= newTrainingData
-                    self.weights[trueLabel] += newTrainingData
+        # cWeights = util.Counter()
+        # for c in Cgrid:
+            # cWeights[c] = self.weights
+            # for iteration in range(self.max_iterations):            
+                # print "Starting iteration ", iteration, "..."     
+                # for i in range(len(trainingData)):
+                    # currentData = trainingData[i]
+                    # score = util.Counter()
+                    # for l in self.legalLabels:
+                        # score[l] = cWeights[c][l] * currentData
+                    # calcLabel = score.argMax()
+                    # trueLabel = trainingLabels[i]
+                    # if calcLabel != trueLabel:
+                        
+                        # cWeights[c][calcLabel] -= currentData
+                        # cWeights[c][trueLabel] += currentData
 
+        cWeights = util.Counter()
+        for c in Cgrid:
+            cWeights[c] = self.weights
+            for iteration in range(self.max_iterations):            
+                print "Starting iteration ", iteration, "..."     
+                for i in range(len(trainingData)):
+                    currentData = trainingData[i]
+                    score = util.Counter()
+                    for l in self.legalLabels:
+                        score[l] = cWeights[c][l] * trainingData[i]
+                    calcLabel = score.argMax()
+                    trueLabel = trainingLabels[i]
+                    if calcLabel != trueLabel: 
+                        trainingDataKwadraat = trainingData[i].copy()
+                        for d in trainingDataKwadraat:
+                            trainingDataKwadraat[d] *= trainingDataKwadraat[d]
+                        tauTeller = (cWeights[c][calcLabel] - cWeights[c][trueLabel])*trainingData[i] + 1.0
+                        
+                        for f in trainingDataKwadraat:
+                            trainingDataKwadraat[f] *= 2
+                        tauNoemer = trainingDataKwadraat.totalCount()
+                        tauTot = min(c, tauTeller/tauNoemer)
+                        tmpData = trainingData[i].copy()
+                        for d in tmpData:
+                            tmpData[d] *= tauTot
+                        cWeights[c][calcLabel] -= tmpData
+                        cWeights[c][trueLabel] += tmpData    
+        
+                                
+        cAccuracies = util.Counter()
+        for c in cWeights:
+            classified = self.classifyWeights(validationData,cWeights[c])
+            correctGuesses = 0
+            index = 0
+            for l in classified:
+                if classified[index] == validationLabels[index]:
+                    correctGuesses += 1
+                index += 1
+            cAccuracies[c] = correctGuesses
+        bestGuess = cAccuracies.argMax()
+        self.weights = cWeights[bestGuess]
+        
+                
+       
                         
     def calculateBestCdata(self, trainingData, trainingLabels, validationData, validationLabels, Cgrid, i, calcLabel, trueLabel):
     
@@ -110,4 +157,11 @@ class MiraClassifier:
             guesses.append(vectors.argMax())
         return guesses
 
-
+    def classifyWeights(self, data, weights):
+        guesses = []
+        for datum in data:
+            vectors = util.Counter()
+            for l in self.legalLabels:
+                vectors[l] = weights[l] * datum
+            guesses.append(vectors.argMax())
+        return guesses
